@@ -1,31 +1,45 @@
 {
-    "name": "lambda-stream-to-firehose",
-    "description": "An AWS Lambda function that forwards data from a Kinesis or DynamoDB Update Stream to a Kinesis Firehose Delivery Stream",
-    "version": "1.3.2",
-    "dependencies": {
-      "async":"1.5.2",
-      "aws-kpl-deagg":"2.1.1"
-    },
-    "keywords": [
-        "amazon",
-        "aws",
-        "kinesis",
-        "firehose",
-        "lambda"
-    ],
-    "author": {
-        "name": "Ian Meyers",
-        "email": "meyersi@amazon.com"
-    },
-    "main": "index.js",
-    "license" : "Apache-2.0",
-    "files": [
-        "index.js",
-        "lambda.json",
-        "tagKinesisStream.sh",
-        "package.json",
-        "README.md",
-        "LICENSE",
-        "NOTICE.txt"
-    ]
+  "name": "lambda-stream-to-firehose",
+  "description": "An AWS Lambda function that forwards data from a Kinesis or DynamoDB Update Stream to a Kinesis Firehose Delivery Stream",
+  "version": "1.3.2",
+  "dependencies": {
+    "async": "1.5.2",
+    "aws-kpl-deagg": "2.1.1"
+  },
+  "keywords": [
+    "amazon",
+    "aws",
+    "kinesis",
+    "firehose",
+    "lambda"
+  ],
+  "authors": [{
+    "name": "Ian Meyers",
+    "email": "meyersi@amazon.com"
+  },
+  {
+    "name": "Tom Gallacher",
+    "email": "me@tomg.co"
+  }],
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node ./node_modules/dpl/dpl.js",
+    "nocov": "node ./node_modules/.bin/mocha ./test/**/*.js",
+    "test": "semistandard && npm run coverage",
+    "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha ./test/**/*.js --report lcov -- -R spec",
+    "lint": "semistandard"
+  },
+  "files_to_deploy": [
+    "index.js",
+    "package.json",
+    ".env"
+  ],
+  "devDependencies": {
+    "dpl": "^3.4.0",
+    "istanbul": "^0.4.4",
+    "mocha": "^2.5.3",
+    "semistandard": "^8.0.0"
+  }
 }
