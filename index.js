@@ -54,12 +54,10 @@ var USE_DEFAULT_DELIVERY_STREAMS = true;
  * value: deliveryStreamName
  */
 var deliveryStreamMapping = {
-  'DEFAULT' : 'LambdaStreamsDefaultDeliveryStream'
+  'DEFAULT': 'LambdaStreamsDefaultDeliveryStream'
 };
 
-var start;
-
-function init() {
+function init () {
   if (!online) {
     if (!setRegion || setRegion === null || setRegion === '') {
       setRegion = 'eu-west-1';
@@ -71,7 +69,7 @@ function init() {
     }
 
     aws.config.update({
-      region : setRegion
+      region: setRegion
     });
 
     // configure a new connection to firehose, if one has not been provided
@@ -80,8 +78,8 @@ function init() {
         console.log('Connecting to Amazon Kinesis Firehose in ' + setRegion);
       }
       exports.firehose = new aws.Firehose({
-        apiVersion : '2015-08-04',
-        region : setRegion
+        apiVersion: '2015-08-04',
+        region: setRegion
       });
     }
 
@@ -92,8 +90,8 @@ function init() {
         console.log('Connecting to Amazon Kinesis Streams in ' + setRegion);
       }
       exports.kinesis = new aws.Kinesis({
-        apiVersion : '2013-12-02',
-        region : setRegion
+        apiVersion: '2013-12-02',
+        region: setRegion
       });
     }
 
@@ -112,7 +110,7 @@ function init() {
  * completed. If supplied callback is with a null/undefined output (such as
  * filtering) then nothing will be sent to Firehose
  */
-exports.addNewlineTransformer = function(data, callback) {
+exports.addNewlineTransformer = function (data, callback) {
   // emitting a new buffer as ascii text with newline
   callback(null, new Buffer(JSON.stringify(data) + '\n'));
 };
@@ -120,7 +118,7 @@ exports.addNewlineTransformer = function(data, callback) {
 /**
  * Example transformer that converts a regular expression to delimited text
  */
-exports.regexToDelimiter = function(regex, delimiter, data, callback) {
+exports.regexToDelimiter = function (regex, delimiter, data, callback) {
   var tokens = JSON.stringify(data).match(regex);
 
   if (tokens) {
@@ -185,7 +183,7 @@ exports.getBatchRanges = function (records) {
 };
 
 /** function to extract the kinesis stream name from a kinesis stream ARN */
-exports.getStreamName = function(arn) {
+exports.getStreamName = function (arn) {
   try {
     var eventSourceARNTokens = arn.split(':');
     return eventSourceARNTokens[5].split('/')[1];
@@ -196,8 +194,8 @@ exports.getStreamName = function(arn) {
 };
 
 /** AWS Lambda event handler */
-exports.handler = function(event, context) {
-  var finish = function(event, status, message) {
+exports.handler = function (event, context) {
+  var finish = function (event, status, message) {
     console.log('Processing Complete');
 
     // log the event if we've failed
@@ -217,7 +215,7 @@ exports.handler = function(event, context) {
    * function which handles the output of the defined transformation on each
    * record.
    */
-  exports.processTransformedRecords = function(transformed, streamName, deliveryStreamName) {
+  exports.processTransformedRecords = function (transformed, streamName, deliveryStreamName) {
     if (debug) {
       console.log('Processing transformed records');
     }
@@ -232,7 +230,7 @@ exports.handler = function(event, context) {
     // This uses the async reduce method so that records from Kinesis will
     // appear in the Firehose PutRecords request in the same order as they
     // were received by this function
-    async.reduce(batches, 0, function(successCount, item, reduceCallback) {
+    async.reduce(batches, 0, function (successCount, item, reduceCallback) {
       if (debug) {
         console.log('Forwarding records ' + item.lowOffset + ':' + item.highOffset + ' - ' + item.sizeBytes + ' Bytes');
       }
@@ -241,14 +239,14 @@ exports.handler = function(event, context) {
       // firehose
       var processRecords = transformed.slice(item.lowOffset, item.highOffset);
 
-      exports.writeToFirehose(processRecords, streamName, deliveryStreamName, function(err) {
+      exports.writeToFirehose(processRecords, streamName, deliveryStreamName, function (err) {
         if (err) {
           reduceCallback(err, successCount);
         } else {
           reduceCallback(null, successCount + 1);
         }
       });
-    }, function(err, result) {
+    }, function (err, result) {
       if (err) {
         console.log('Forwarding failure after ' + result + ' successful batches');
         finish(err, ERROR);
@@ -263,18 +261,18 @@ exports.handler = function(event, context) {
    * function which forwards a batch of kinesis records to a firehose delivery
    * stream
    */
-  exports.writeToFirehose = function(firehoseBatch, streamName, deliveryStreamName, callback) {
+  exports.writeToFirehose = function (firehoseBatch, streamName, deliveryStreamName, callback) {
     if (debug) {
       console.log('Writing to firehose');
     }
     // write the batch to firehose with putRecordBatch
     var putRecordBatchParams = {
-      DeliveryStreamName : deliveryStreamName,
-      Records : firehoseBatch
+      DeliveryStreamName: deliveryStreamName,
+      Records: firehoseBatch
     };
 
     var startTime = new Date().getTime();
-    exports.firehose.putRecordBatch(putRecordBatchParams, function(err, data) {
+    exports.firehose.putRecordBatch(putRecordBatchParams, function (err, data) {
       if (err) {
         console.log(JSON.stringify(err));
         callback(err);
@@ -292,7 +290,7 @@ exports.handler = function(event, context) {
    * Function to process a stream event received by AWS Lambda, and generate
    * requests to forward to Firehose
    */
-  exports.processEvent = function(event, serviceName, streamName) {
+  exports.processEvent = function (event, serviceName, streamName) {
     if (debug) {
       console.log('Processing event');
     }
@@ -303,11 +301,11 @@ exports.handler = function(event, context) {
       console.log('Forwarding ' + event.Records.length + ' ' + serviceName + ' records to Delivery Stream ' + deliveryStreamName);
     }
 
-    async.map(event.Records, function(item, recordCallback) {
+    async.map(event.Records, function (item, recordCallback) {
       // resolve the record data based on the service
       if (serviceName === KINESIS_SERVICE_NAME) {
         // run the record through the KPL deaggregator
-        deagg.deaggregateSync(item.kinesis, computeChecksums, function(err, userRecords) {
+        deagg.deaggregateSync(item.kinesis, computeChecksums, function (err, userRecords) {
           // userRecords now has all the deaggregated user records, or
           // just the original record if no KPL aggregation is in
           // use
@@ -318,7 +316,7 @@ exports.handler = function(event, context) {
           }
         });
       }
-    }, function(err, extractedUserRecords) {
+    }, function (err, extractedUserRecords) {
       if (err) {
         finish(err, ERROR);
       } else {
@@ -327,11 +325,11 @@ exports.handler = function(event, context) {
         var userRecords = [].concat.apply([], extractedUserRecords);
 
         // transform the user records
-        async.map(userRecords, function(userRecord, userRecordCallback) {
+        async.map(userRecords, function (userRecord, userRecordCallback) {
           var dataItem = serviceName === KINESIS_SERVICE_NAME ? new Buffer(userRecord.data, 'base64').toString('ascii') : userRecord;
 
           // only transform the data portion of a kinesis record
-          transformer(dataItem, function(err, transformed) {
+          transformer(dataItem, function (err, transformed) {
             if (err) {
               console.log(JSON.stringify(err));
               userRecordCallback(err);
@@ -441,8 +439,9 @@ exports.handler = function(event, context) {
           deliveryStreamMapping[streamName] = deliveryStreamMapping['DEFAULT'];
           exports.verifyDeliveryStreamMapping(streamName, false, event, callback);
         } else {
-          finish(event, ERROR, 'Could not find suitable delivery stream for ' + streamName + ' and the ' + 'default delivery stream (' + deliveryStreamMapping['DEFAULT']
-              + ') either doesn\'t exist or is disabled.');
+          finish(event, ERROR, 'Could not find suitable delivery stream for ' +
+            streamName + ' and the ' + 'default delivery stream (' + deliveryStreamMapping['DEFAULT'] +
+            ') either doesn\'t exist or is disabled.');
         }
       } else {
         // call the specified callback - should have
